@@ -4,11 +4,11 @@ namespace CellularAutomata5Biomes
 {
     class Program
     {
-        const int WIDTH = 200;
-        const int HEIGHT = 50;
+        const int WIDTH = 400;
+        const int HEIGHT = 100;
         const int ITERATIONS = 50;
 
-        static Random rng = new Random(1);
+        static Random rng = new Random(2);
 
         enum CellState
         {
@@ -32,10 +32,10 @@ namespace CellularAutomata5Biomes
 
             Console.CursorVisible = false;
 
+                bool isFinalIteration = false;
             for (int step = 0; step < ITERATIONS; step++)
             {
-                bool isFinalIteration = false;
-                if (step == ITERATIONS - 2)
+                if (step == ITERATIONS - 7)
                     isFinalIteration = true;
 
                 Console.SetCursorPosition(0, 0);
@@ -48,7 +48,6 @@ namespace CellularAutomata5Biomes
                 Array.Copy(nextGrid, grid, nextGrid.Length);
                 System.Threading.Thread.Sleep(50);
             }
-
             Console.ResetColor();
             Console.WriteLine("\nSimulación terminada.");
         }
@@ -177,26 +176,13 @@ namespace CellularAutomata5Biomes
 
             if (isFinalIteration)
             {
-                // elimina biomas aislados
-                if (counts[(int)current] <= 1)
-                {
-                    return GetMajorityState(counts, current);
-                }
-
                 // elimina los charcos de agua
                 if (current == CellState.ocean && CountNeighborsRadius(grid, x, y, 3, CellState.ocean) <= 40)
                 {
                     return GetMajorityStateRadius(grid, x, y, 3, current);
                 }
 
-                // elimina la playa de los charcos de agua
-                if (current == CellState.beach && CountNeighborsRadius(grid, x, y, 3, CellState.ocean) <= 40)
-                {
-                    return GetMajorityStateRadius(grid, x, y, 3, current);
-                }
             }
-
-
 
             // ============================================================
             // REGLAS ECOLÓGICAS
@@ -212,6 +198,7 @@ namespace CellularAutomata5Biomes
                         return CellState.forest;
                 }
             }
+
             // expande mountain
             if (current == CellState.forest && counts[(int)CellState.mountain] >= 3)
             {
@@ -219,8 +206,20 @@ namespace CellularAutomata5Biomes
                     return CellState.mountain;
             }
 
-            // forest no puede tocar agua
+            // forest no puede tocar agua, frontera de grass entre forest y ocean
             if (current == CellState.forest && counts[(int)CellState.ocean] >= 1)
+            {
+                return CellState.grass;
+            }
+
+            // estabiliza frontera entre forest y ocean
+            if (current == CellState.grass && CountNeighborsRadius(grid, x, y, 2, CellState.forest) >= 4 && CountNeighborsRadius(grid, x, y, 2, CellState.ocean) >= 8)
+            {
+                return CellState.grass;
+            }
+
+            // frontera grande de grass
+            if (current == CellState.forest && counts[(int)CellState.grass] >= 2 && (CountNeighborsRadius(grid, x, y, 2, CellState.ocean) >= 1))
             {
                 return CellState.grass;
             }
@@ -245,8 +244,6 @@ namespace CellularAutomata5Biomes
                     return CellState.ocean;
             }
 
- 
-
             // expande ocean
             if (current == CellState.mountain && counts[(int)CellState.ocean] >= 3)
             {
@@ -264,14 +261,11 @@ namespace CellularAutomata5Biomes
                 }
             }
 
-            if (!isFinalIteration)
+            // expande dessert
+            if (current == CellState.grass && counts[(int)CellState.dessert] >= 3)
             {
-                // expande dessert
-                if (current == CellState.grass && counts[(int)CellState.dessert] >= 3)
-                {
-                    if (rng.NextDouble() < 0.2)
-                        return CellState.dessert;
-                }
+                if (rng.NextDouble() < 0.2)
+                    return CellState.dessert;
             }
 
             // expande mountain
@@ -279,6 +273,18 @@ namespace CellularAutomata5Biomes
             {
                 if (rng.NextDouble() < 0.25)
                     return CellState.mountain;
+            }
+
+            // frontera beach
+            if (current == CellState.dessert && counts[(int)CellState.ocean] >= 1)
+            {
+                return CellState.beach;
+            }
+
+            // frontera grande de beach
+            if (current == CellState.dessert && counts[(int)CellState.beach] >= 2 && (CountNeighborsRadius(grid, x, y, 2, CellState.ocean) >= 1))
+            {
+                return CellState.beach;
             }
 
             // expande mountain
@@ -292,18 +298,6 @@ namespace CellularAutomata5Biomes
             if (current == CellState.mountain && counts[(int)CellState.grass] >= 4 && (CountNeighborsRadius(grid, x, y, 2, CellState.mountain) <= 9))
             {
                 return CellState.grass;
-            }
-
-            // frontera beach
-            if (current == CellState.dessert && counts[(int)CellState.ocean] >= 1)
-            {
-                return CellState.beach;
-            }
-
-            // frontera grande de beach
-            if (current == CellState.dessert && counts[(int)CellState.beach] >= 3 && (CountNeighborsRadius(grid, x, y, 2, CellState.ocean) >= 1))
-            {
-                return CellState.beach;
             }
 
             // estabiliza beach
@@ -325,10 +319,6 @@ namespace CellularAutomata5Biomes
                 if (CountNeighborsRadius(grid, x, y, 2, CellState.beach) >= 3)
                     return CellState.beach;
 
-                // si está entre océano y tierra → se mantiene
-                if (counts[(int)CellState.ocean] >= 1 && (counts[(int)CellState.grass] + counts[(int)CellState.dessert] + counts[(int)CellState.forest]) >= 1)
-                    return CellState.beach;
-
             }
 
             // frontera grass
@@ -343,20 +333,16 @@ namespace CellularAutomata5Biomes
                 return CellState.grass;
             }
 
-            // elimina islas de beach sin agua
-            if (current == CellState.beach && (CountNeighborsRadius(grid, x, y, 2, CellState.ocean) <= 3))
-            {
-                return GetMajorityState(counts, current);
-            }
-
-
             // ============================================================
             // 1. REGLA DE MAYORÍA (crea islas y regiones grandes)
             // ============================================================
-            CellState majority = GetMajorityState(counts, current);
-            if (majority != current)
-                return majority;
-
+            //if (!isFinalIteration)
+            //{
+                CellState majority = GetMajorityState(counts, current);
+                if (majority != current)
+                    return majority;
+            //}
+            
 
             return current;
 

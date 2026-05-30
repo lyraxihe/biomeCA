@@ -55,34 +55,9 @@ namespace CellularAutomata5Biomes
         // ============================================================
         // MAYORÍA
         // ============================================================
-        static CellState GetMajorityState(int[] counts, CellState current)
-        {
-            int max = -1;
-            int winner = (int)current;
-            int ties = 0;
-
-            for (int i = 0; i < 5; i++)
-            {
-                if (counts[i] > max)
-                {
-                    max = counts[i];
-                    winner = i;
-                    ties = 1;
-                }
-                else if (counts[i] == max)
-                {
-                    ties++;
-                }
-            }
-
-            if (ties > 1)
-                return current;
-
-            return (CellState)winner;
-        }
-
         static CellState GetMajorityStateRadius(CellState[,] grid, int x, int y, int radius, CellState current)
         {
+
             int[] counts = new int[6];
 
             // Contar vecinos dentro del radio
@@ -96,7 +71,11 @@ namespace CellularAutomata5Biomes
                     int ny = y + dy;
 
                     if (nx >= 0 && nx < WIDTH && ny >= 0 && ny < HEIGHT)
+                    {
+                        //ignora a beach 
+                        if (grid[nx, ny]!= CellState.beach)
                         counts[(int)grid[nx, ny]]++;
+                    }
                 }
             }
 
@@ -177,7 +156,7 @@ namespace CellularAutomata5Biomes
             if (isFinalIteration)
             {
                 // elimina los charcos de agua
-                if (current == CellState.ocean && CountNeighborsRadius(grid, x, y, 3, CellState.ocean) <= 40)
+                if (current == CellState.ocean && CountNeighborsRadius(grid, x, y, 3, CellState.ocean) < 40)
                 {
                     return GetMajorityStateRadius(grid, x, y, 3, current);
                 }
@@ -312,7 +291,7 @@ namespace CellularAutomata5Biomes
 
                 // si no toca océano → no es playa real
                 if (CountNeighborsRadius(grid, x, y, 2, CellState.ocean) <= 1)
-                    return GetMajorityState(counts, current);
+                    return GetMajorityStateRadius(grid, x, y, 1, current);
 
 
                 // si hay mucha playa alrededor → se estabiliza
@@ -336,12 +315,9 @@ namespace CellularAutomata5Biomes
             // ============================================================
             // 1. REGLA DE MAYORÍA (crea islas y regiones grandes)
             // ============================================================
-            //if (!isFinalIteration)
-            //{
-                CellState majority = GetMajorityState(counts, current);
-                if (majority != current)
+                CellState majority = GetMajorityStateRadius(grid, x, y, 1, current);
+            if (majority != current)
                     return majority;
-            //}
             
 
             return current;

@@ -4,8 +4,8 @@ namespace CellularAutomata5Biomes
 {
     class Program
     {
-        const int WIDTH = 400;
-        const int HEIGHT = 100;
+        const int WIDTH = 800;
+        const int HEIGHT = 200;
         const int ITERATIONS = 50;
 
         static Random rng = new Random(2);
@@ -15,7 +15,7 @@ namespace CellularAutomata5Biomes
             ocean = 0,
             grass = 1,
             forest = 2,
-            dessert = 3,
+            desert = 3,
             mountain = 4,
             beach = 5
         }
@@ -196,12 +196,12 @@ namespace CellularAutomata5Biomes
                     CountNeighborsRadius(grid, x, y, 2, CellState.ocean) +
                     CountNeighborsRadius(grid, x, y, 2, CellState.forest) == 0 &&
                     rng.NextDouble() < 0.15)
-                    return CellState.dessert;
+                    return CellState.desert;
 
                 // expande dessert
-                if (counts[(int)CellState.dessert] >= 3 &&
+                if (counts[(int)CellState.desert] >= 3 &&
                     rng.NextDouble() < 0.2)
-                    return CellState.dessert;
+                    return CellState.desert;
             }
 
             // ============================================================
@@ -231,7 +231,7 @@ namespace CellularAutomata5Biomes
             // ============================================================
             // REGLAS PARA DESSERT
             // ============================================================
-            if (current == CellState.dessert)
+            if (current == CellState.desert)
             {
                 // frontera entre dessert y ocean
                 if (counts[(int)CellState.ocean] >= 1)
@@ -328,7 +328,7 @@ namespace CellularAutomata5Biomes
                             Console.ForegroundColor = ConsoleColor.DarkGreen;
                             break;
 
-                        case CellState.dessert:
+                        case CellState.desert:
                             Console.ForegroundColor = ConsoleColor.DarkYellow;
                             break;
 
